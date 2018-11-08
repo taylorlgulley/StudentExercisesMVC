@@ -1,18 +1,49 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
+using Dapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using StudentExerciseMVC.Models.ViewModels;
+using StudentExercisesAPI.Data;
 
 namespace StudentExerciseMVC.Controllers
 {
     public class CohortsController : Controller
     {
-        // GET: Cohorts
-        public ActionResult Index()
+        private readonly IConfiguration _config;
+
+        public CohortsController(IConfiguration config)
         {
-            return View();
+            _config = config;
+        }
+
+        public IDbConnection Connection
+        {
+            get
+            {
+                return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+            }
+        }
+
+        // GET: Cohorts
+        public async Task<ActionResult> Index()
+        {
+            using (IDbConnection conn = Connection)
+            {
+
+                IEnumerable<Cohort> cohorts = await conn.QueryAsync<Cohort>(@"
+                    SELECT 
+                        c.Id,
+                        c.Name
+                    FROM Cohort c
+                ");
+                return View(cohorts);
+            }
         }
 
         // GET: Cohorts/Details/5
